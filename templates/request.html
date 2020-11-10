@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block container %}
+
+  <main class="container mt-5">
+    <div class="col-12 col-sm-10 col-lg-6 offset-lg-3 offset-sm-1">
+      <form action="/request_done/" class="card mb-5" method="POST">
+
+        <div class="card-body text-center pt-5">
+          <h1 class="h3 card-title mt-4 mb-2">Подбор преподавателя</h1>
+          <p class="px-5">Напишите, чего вам нужно и&nbsp;мы&nbsp;подберем отличных&nbsp;ребят</p>
+        </div>
+        <hr>
+        <div class="card-body mx-3">
+          <div class="row">
+
+            <div class="col">
+              <p>{{form.goals.label}}</p>
+              {% for option in form.goals  %}
+              <div class="form-check ">
+                  {{ option(class="form-check-input") }} {{ option.label(class="form-check-label") }}
+              </div>
+              {% endfor %}
+            </div>
+
+            <div class="col">
+              <p>{{form.time.label}}</p>
+                {% for option in form.time %}
+                    <div class="form-check">
+                {{ option(class="form-check-input") }} {{ option.label(class="form-check-label") }}
+                    </div>
+                {% endfor %}
+                {{ form.csrf_token }}
+
+        </div>
+          </div>
+           </div>
+        <hr>
+
+          {% for message in form.clientName.errors %}
+                <div class="alert alert-danger" role="alert">{{ message }}</div>
+          {% endfor %}
+          {% for message in form.clientPhone.errors %}
+                <div class="alert alert-danger" role="alert">{{ message }}</div>
+          {% endfor %}
+
+        <div class="card-body mx-3">
+          {{form.clientName.label(class="mb-1 mt-2")}}
+          {{form.clientName(class="form-control")}}
+          {{form.clientPhone.label(class="mb-1 mt-2")}}
+          {{form.clientPhone(class="form-control")}}
+          <input type="submit" class="btn btn-primary mt-4 mb-2 btn-block" value="Найдите мне преподавателя">
+        </div>
+      </form>
+    </div>
+  </main>
+{% endblock %}
