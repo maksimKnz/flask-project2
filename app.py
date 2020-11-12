@@ -87,7 +87,7 @@ def main():
     return render_template('index.html', teachers=data['teachers'], ids=random_teachers_ids, pic=data['emodji'], goals=data['goals'])
 
 
-@app.route('/goals/<goal>')
+@app.route('/goals/<goal>/')
 def show_goals(goal):
     data = get_data()
     sorted_list = []
