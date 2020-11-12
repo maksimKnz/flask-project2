@@ -9,11 +9,9 @@ import os
 
 app = Flask(__name__)
 app.secret_key = 'Secret!'
-
+hours = {"1-2": "1-2 часа", "3-5": "3-5 часов", "5-7": "5-7 часов", "7-10": "7-10 часов"}
 days = {"mon": "Понедельник", "tue": "Вторник", "wed": "Среда", "thu": "Четверг", "fri": "Пятница", "sat": "Суббота", "sun": "Воскресенье"}
 week = {'sun': 'sunday', 'mon': 'monday', 'tue': 'tuesday', 'wed': 'wednesday', 'thu': 'thursday', 'fri': 'friday', 'sat': 'saturday'}
-emodji = {"travel": "⛱", "study": "🏫", "work": "🏢", "relocate": "🚜", "programming": "🖥"}
-hours = {"1-2": "1-2 часа", "3-5": "3-5 часов", "5-7": "5-7 часов", "7-10": "7-10 часов"}
 
 
 class BookingForm(FlaskForm):
@@ -25,16 +23,14 @@ class BookingForm(FlaskForm):
 
 
 # эта функция для добавления цели
-def add_goal(id_list, new_goal):
+def add_goal(id_list, new_goal_eng, new_goal_ru, new_goal_pic):
     data = get_data()
-    data['goals'].update(new_goal)
-    for key, value in new_goal.items():
-        eng_goal = key
-        for id in id_list:
-            if eng_goal not in data['teachers'][id]['goals']:
-                data['teachers'][id]['goals'].append(eng_goal)
-    out = {'goals': data['goals']}
-    out.update({'teachers': data['teachers']})
+    data['goals'].update({new_goal_eng: new_goal_ru})
+    data['emodji'].update({new_goal_eng: new_goal_pic})
+    for id in id_list:
+        if new_goal_eng not in data['teachers'][id]['goals']:
+            data['teachers'][id]['goals'].append(new_goal_eng)
+    out = {'goals': data['goals'], 'teachers': data['teachers'], 'emodji': data['emodji']}
     with open("data.txt", "w") as f:
         json.dump(out, f)
 
@@ -48,7 +44,7 @@ def get_data():
 class RequestForm(FlaskForm):
     data = get_data()
     clientName = StringField('Вас зовут', [InputRequired(), Length(min=2, message='Пожалуйста укажите ваше имя')])
-    clientPhone = StringField('Ваш телефон', [InputRequired(), Length(min=2, message='Пожалуйста укажите номер телефона')])
+    clientPhone = StringField('Ваш телефон', [InputRequired(), Length(min=5, message='Пожалуйста укажите номер телефона')])
     time = RadioField('Сколько времени есть?', choices=[(key, value) for key, value in hours.items()])
     goals = RadioField('Какая цель занятий?', choices=[(key, value) for key, value in data['goals'].items()])
 
@@ -81,14 +77,14 @@ def add_record(name, phone, teacher_id, day, time):
 
 @app.route('/')
 def main():
-    # add_goal((8,9,10,11),{"programming":"Для программирования"}) <- Так добавлял цель
+    #add_goal((8, 9, 10, 11), 'programming', 'Для программирования', '🖥') #<- Так добавлял цель
     data = get_data()
     random_teachers_ids = []
     while len(random_teachers_ids) < 6:
         i = random.randint(0, len(data['teachers'])-1)
         if i not in random_teachers_ids:
             random_teachers_ids.append(i)
-    return render_template('index.html', teachers=data['teachers'], ids=random_teachers_ids, pic=emodji, goals=data['goals'])
+    return render_template('index.html', teachers=data['teachers'], ids=random_teachers_ids, pic=data['emodji'], goals=data['goals'])
 
 
 @app.route('/goals/<goal>')
@@ -98,7 +94,7 @@ def show_goals(goal):
     for teacher in data['teachers']:
         if goal in teacher['goals']:
             sorted_list.append(teacher)
-    return render_template("goal.html", teachers=sorted_list, goals=data['goals'], goal=goal, pic=emodji)
+    return render_template("goal.html", teachers=sorted_list, goals=data['goals'], goal=goal, pic=data['emodji'])
 
 
 @app.route('/profiles/<int:teacher_id>/')
