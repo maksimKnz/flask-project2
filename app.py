@@ -5,7 +5,6 @@ from wtforms.validators import InputRequired, Length
 import random
 import json
 import os
-import pprint
 
 
 app = Flask(__name__)
@@ -25,6 +24,7 @@ class BookingForm(FlaskForm):
     clientTeacher = HiddenField()
 
 
+# эта функция для добавления цели
 def add_goal(id_list, new_goal):
     data = get_data()
     data['goals'].update(new_goal)
@@ -35,7 +35,6 @@ def add_goal(id_list, new_goal):
                 data['teachers'][id]['goals'].append(eng_goal)
     out = {'goals': data['goals']}
     out.update({'teachers': data['teachers']})
-    pprint.pprint(out)
     with open("data.txt", "w") as f:
         json.dump(out, f)
 
@@ -49,7 +48,7 @@ def get_data():
 class RequestForm(FlaskForm):
     data = get_data()
     clientName = StringField('Вас зовут', [InputRequired(), Length(min=2, message='Пожалуйста укажите ваше имя')])
-    clientPhone = StringField('Ваш телефон', [InputRequired(), Length(min=2, message='Пожалуйста укажите телефон')])
+    clientPhone = StringField('Ваш телефон', [InputRequired(), Length(min=2, message='Пожалуйста укажите номер телефона')])
     time = RadioField('Сколько времени есть?', choices=[(key, value) for key, value in hours.items()])
     goals = RadioField('Какая цель занятий?', choices=[(key, value) for key, value in data['goals'].items()])
 
