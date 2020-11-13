@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect
 from flask_wtf import FlaskForm
 from wtforms import StringField, HiddenField, RadioField
-from wtforms.validators import Length, ValidationError, Regexp
+from wtforms.validators import Length, ValidationError
 import phonenumbers
 import random
 import json
@@ -26,7 +26,7 @@ def check_phone(form, field):
     print(number)
     try:
         if not phonenumbers.is_valid_number(phonenumbers.parse(number, 'RU')):
-            raise phonenumbers.NumberParseException(None,None)
+            raise phonenumbers.NumberParseException(None, None)
     except phonenumbers.NumberParseException:
         raise ValidationError('Пожалуйста укажите номер телефона полностью (+7ХХХХХХХХХХ)')
     # if not phonenumbers.is_possible_number(phonenumbers.parse(number, 'RU')):
