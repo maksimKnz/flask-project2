@@ -1,7 +1,8 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect
 from flask_wtf import FlaskForm
 from wtforms import StringField, HiddenField, RadioField
-from wtforms.validators import InputRequired, Length
+from wtforms.validators import Length, ValidationError, Regexp
+import phonenumbers
 import random
 import json
 import os
@@ -14,12 +15,28 @@ days = {"mon": "Понедельник", "tue": "Вторник", "wed": "Сре
 week = {'sun': 'sunday', 'mon': 'monday', 'tue': 'tuesday', 'wed': 'wednesday', 'thu': 'thursday', 'fri': 'friday', 'sat': 'saturday'}
 
 
-class BookingForm(FlaskForm):
-    clientName = StringField('Вас зовут', [InputRequired()])
-    clientPhone = StringField('Ваш телефон', [InputRequired()])
-    clientWeekday = HiddenField()
-    clientTime = HiddenField()
-    clientTeacher = HiddenField()
+def get_data():
+    with open("data.txt", "r") as d:
+        data = json.load(d)
+    return data
+
+
+def check_phone(form, field):
+    number = form.clientPhone.data
+    print(number)
+    try:
+        if not phonenumbers.is_valid_number(phonenumbers.parse(number, 'RU')):
+            raise phonenumbers.NumberParseException(None,None)
+    except phonenumbers.NumberParseException:
+        raise ValidationError('Пожалуйста укажите номер телефона полностью (+7ХХХХХХХХХХ)')
+    # if not phonenumbers.is_possible_number(phonenumbers.parse(number, 'RU')):
+    #    raise ValidationError('Пожалуйста укажите корректный номер телефона')
+
+
+def convert_day(day):
+    for key, value in week.items():
+        if value == day:
+            return key
 
 
 # эта функция для добавления цели
@@ -27,32 +44,12 @@ def add_goal(id_list, new_goal_eng, new_goal_ru, new_goal_pic):
     data = get_data()
     data['goals'].update({new_goal_eng: new_goal_ru})
     data['emodji'].update({new_goal_eng: new_goal_pic})
-    for id in id_list:
-        if new_goal_eng not in data['teachers'][id]['goals']:
-            data['teachers'][id]['goals'].append(new_goal_eng)
+    for gid in id_list:
+        if new_goal_eng not in data['teachers'][gid]['goals']:
+            data['teachers'][gid]['goals'].append(new_goal_eng)
     out = {'goals': data['goals'], 'teachers': data['teachers'], 'emodji': data['emodji']}
     with open("data.txt", "w") as f:
         json.dump(out, f)
-
-
-def get_data():
-    with open("data.txt", "r") as d:
-        data = json.load(d)
-    return data
-
-
-class RequestForm(FlaskForm):
-    data = get_data()
-    clientName = StringField('Вас зовут', [InputRequired(), Length(min=2, message='Пожалуйста укажите ваше имя')])
-    clientPhone = StringField('Ваш телефон', [InputRequired(), Length(min=5, message='Пожалуйста укажите номер телефона')])
-    time = RadioField('Сколько времени есть?', choices=[(key, value) for key, value in hours.items()])
-    goals = RadioField('Какая цель занятий?', choices=[(key, value) for key, value in data['goals'].items()])
-
-
-def convert_day(day):
-    for key, value in week.items():
-        if value == day:
-            return key
 
 
 def add_callback(name, phone, goal, time):
@@ -75,9 +72,25 @@ def add_record(name, phone, teacher_id, day, time):
         json.dump(records, w)
 
 
+class RequestForm(FlaskForm):
+    data = get_data()
+    clientName = StringField('Вас зовут', [Length(min=2, message='Пожалуйста укажите ваше имя')])
+    clientPhone = StringField('Ваш телефон', [check_phone])
+    time = RadioField('Сколько времени есть?', choices=[(key, value) for key, value in hours.items()], default='1-2')
+    goals = RadioField('Какая цель занятий?', choices=[(key, value) for key, value in data['goals'].items()], default='travel')
+
+
+class BookingForm(FlaskForm):
+    clientName = StringField('Вас зовут', [Length(min=2, message='Пожалуйста укажите ваше имя')])
+    clientPhone = StringField('Ваш телефон', [check_phone])
+    clientWeekday = HiddenField()
+    clientTime = HiddenField()
+    clientTeacher = HiddenField()
+
+
 @app.route('/')
 def main():
-    #add_goal((8, 9, 10, 11), 'programming', 'Для программирования', '🖥') #<- Так добавлял цель
+    # add_goal((8, 9, 10, 11), 'programming', 'Для программирования', '🖥') #<- Так добавлял цель
     data = get_data()
     random_teachers_ids = []
     while len(random_teachers_ids) < 6:
@@ -110,7 +123,7 @@ def make_request():
     return render_template("request.html", form=form)
 
 
-@app.route('/request_done/', methods=['POST'])
+@app.route('/request_done/', methods=['POST', 'GET'])
 def request_done():
     form = RequestForm()
     data = get_data()
@@ -125,7 +138,7 @@ def request_done():
         else:
             return render_template("request.html", form=form)
     else:
-        return render_template("request.html")
+        return render_template("request.html", form=form)
 
 
 @app.route('/booking/<int:teacher_id>/<day>/<time>/')
@@ -137,29 +150,23 @@ def booking(teacher_id, day, time):
     return render_template("booking.html", teacher=data['teachers'][teacher_id], day=what_day, time=time, days=days, form=form)
 
 
-@app.route('/booking_done/', methods=['POST'])
+@app.route('/booking_done/', methods=['POST', 'GET'])
 def booking_save():
+    data = get_data()
     form = BookingForm()
     if request.method == 'POST':
         name = form.clientName.data
         phone = form.clientPhone.data
         day = form.clientWeekday.data
         time = form.clientTime.data
-        teacher_id = form.clientTeacher.data
-        add_record(name, phone, teacher_id, day, time)
-        return render_template("booking_done.html", name=name, phone=phone, day=days.get(day), time=time, teacher_id=teacher_id)
+        teacher_id = int(form.clientTeacher.data)
+        if form.validate_on_submit():
+            add_record(name, phone, teacher_id, day, time)
+            return render_template("booking_done.html", name=name, phone=phone, day=days.get(day), time=time, teacher_id=teacher_id)
+        else:
+            return render_template("booking.html", teacher=data['teachers'][teacher_id], day=day, time=time, days=days, form=form)
     else:
-        return render_template("index.html")
-
-
-@app.errorhandler(404)
-def render_not_found(err):
-    return "Ничего не нашлось! Вот неудача, отправляйтесь на главную!", 404, err
-
-
-@app.errorhandler(500)
-def render_server_error(err):
-    return "Что-то не так, но мы все починим", 500, err
+        return redirect('/')
 
 
 if __name__ == '__main__':

@@ -19,7 +19,12 @@
                 {{form.clientTime}}
                 {{form.clientTeacher}}
               </div>
-
+            {% for message in form.clientName.errors %}
+                <div class="alert alert-danger" role="alert">{{ message }}</div>
+            {% endfor %}
+            {% for message in form.clientPhone.errors %}
+                  <div class="alert alert-danger" role="alert">{{ message }}</div>
+            {% endfor %}
             {{form.clientName.label(class="mb-1 mt-2")}}
             {{ form.clientName (class="form-control")}}
 
