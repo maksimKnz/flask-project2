@@ -29,8 +29,6 @@ def check_phone(form, field):
             raise phonenumbers.NumberParseException(None, None)
     except phonenumbers.NumberParseException:
         raise ValidationError('Пожалуйста укажите номер телефона полностью (+7ХХХХХХХХХХ)')
-    # if not phonenumbers.is_possible_number(phonenumbers.parse(number, 'RU')):
-    #    raise ValidationError('Пожалуйста укажите корректный номер телефона')
 
 
 def convert_day(day):
