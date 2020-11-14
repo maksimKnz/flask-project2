@@ -97,6 +97,10 @@ def main():
             random_teachers_ids.append(i)
     return render_template('index.html', teachers=data['teachers'], ids=random_teachers_ids, pic=data['emodji'], goals=data['goals'])
 
+@app.route('/all/')
+def all_teachers():
+    data = get_data()
+    return render_template('index.html', teachers=data['teachers'], ids=[i for i in range(len(data['teachers']))], pic=data['emodji'], goals=data['goals'])
 
 @app.route('/goals/<goal>/')
 def show_goals(goal):

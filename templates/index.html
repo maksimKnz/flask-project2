@@ -7,7 +7,7 @@
     <div class="text-center mb-5">
       <div class="btn-group mx-auto mb-0" role="group" aria-label="Basic example">
        {% for link, goal in goals.items() %}
-        <a href="/goals/{{link}}" class="btn btn-outline-secondary">{{pic.get(link)}} {{goal}}</a>
+        <a href="/goals/{{link}}/" class="btn btn-outline-secondary">{{pic.get(link)}} {{goal}}</a>
         {% endfor %}
       </div>
     </div>
@@ -24,7 +24,7 @@
                 <p class="float-right">Рейтинг: {{teachers[id].rating}} Ставка: {{teachers[id].price}} / час</p>
                 <h2 class="h4">{{teachers[id].name}}</h2>
                 <p>{{teachers[id].about}}</p>
-                <a href="/profiles/{{teachers[id].id}}" class="btn btn-outline-primary btn-sm mr-3 mb-2">Показать информацию и расписание</a>
+                <a href="/profiles/{{teachers[id].id}}/" class="btn btn-outline-primary btn-sm mr-3 mb-2">Показать информацию и расписание</a>
 
               </div>
             </div>
